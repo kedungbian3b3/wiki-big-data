@@ -2,8 +2,7 @@
 
 A production-style **Data Engineering streaming project** that ingests live Wikimedia edit events, streams them through a Kafka-compatible message broker, processes the events in near real time, stores curated records in PostgreSQL, and serves operational analytics through a Streamlit dashboard.
 
-This project is designed as a portfolio-ready Data Engineer project: it demonstrates event-driven ingestion, message queue design, stream processing, idempotent database loading, containerized deployment, observability, and real-time analytics.
-
+The platform is designed to simulate a real-world streaming data pipeline, focusing on event-driven ingestion, message queue design, stream processing, idempotent database loading, containerized deployment, observability, and real-time analytics.
 ---
 
 ## 1. Project Summary
@@ -27,8 +26,6 @@ The final result is a real-time dashboard where new events are visible continuou
 
 ![Real-time Wikimedia Streaming Architecture](diagrams/architecture.png)
 
-> If the image does not render, open the source file directly: `diagrams/architecture.svg`
-
 The project uses **Redpanda** as a Kafka-compatible broker to keep the local environment lightweight while still practicing Kafka concepts such as topics, partitions, consumer groups, offsets, producer/consumer separation, and at-least-once delivery.
 
 ---
@@ -48,9 +45,9 @@ The project uses **Redpanda** as a Kafka-compatible broker to keep the local env
 
 ---
 
-## 4. Data Engineering Capabilities Demonstrated
+## 4. Engineering Design Highlights
 
-This project demonstrates practical Data Engineering skills that are useful in real production systems:
+This section summarizes the core engineering decisions and implementation patterns used in the streaming pipeline:
 
 - Building an event-driven data ingestion service from a live streaming API.
 - Designing a Kafka-style architecture with producer, broker, topic, partitions, consumer group, and offset management.
