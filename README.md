@@ -23,33 +23,11 @@ The final result is a real-time dashboard where new events are visible continuou
 
 ## 2. Architecture
 
-Architecture diagram:
+### Architecture Diagram
 
-```text
-diagrams/architecture.svg
-diagrams/architecture.png
-```
+![Real-time Wikimedia Streaming Architecture](diagrams/architecture.png)
 
-High-level flow:
-
-```text
-Wikimedia EventStreams
-        │
-        ▼
-Python Producer
-        │
-        ▼
-Redpanda / Kafka-compatible Broker
-        │
-        ▼
-Python Stream Processor
-        │
-        ▼
-PostgreSQL Serving Database
-        │
-        ▼
-Streamlit Real-time Dashboard
-```
+> If the image does not render, open the source file directly: `diagrams/architecture.svg`
 
 The project uses **Redpanda** as a Kafka-compatible broker to keep the local environment lightweight while still practicing Kafka concepts such as topics, partitions, consumer groups, offsets, producer/consumer separation, and at-least-once delivery.
 
