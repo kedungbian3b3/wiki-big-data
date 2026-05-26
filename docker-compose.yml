@@ -1,0 +1,119 @@
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.3.5
+    container_name: wiki_stream_redpanda
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=redpanda:33145
+    ports:
+      - "19092:19092"
+      - "9644:9644"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster info -X brokers=localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  redpanda-init:
+    image: redpandadata/redpanda:v24.3.5
+    container_name: wiki_stream_redpanda_init
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "rpk topic create wiki.recentchange.raw
+      --partitions 6
+      --replicas 1
+      -X brokers=redpanda:9092 || true"
+    restart: "no"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: wiki_stream_postgres
+    environment:
+      POSTGRES_DB: streaming
+      POSTGRES_USER: stream
+      POSTGRES_PASSWORD: stream
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stream -d streaming"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  producer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: wiki_stream_producer
+    env_file:
+      - .env.example
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      redpanda-init:
+        condition: service_completed_successfully
+    command: ["python", "services/producer/wiki_producer.py"]
+    restart: unless-stopped
+
+  processor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: wiki_stream_processor
+    env_file:
+      - .env.example
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      redpanda-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    command: ["python", "services/processor/stream_processor.py"]
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: wiki_stream_dashboard
+    env_file:
+      - .env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8501:8501"
+    command:
+      [
+        "streamlit",
+        "run",
+        "services/dashboard/app.py",
+        "--server.address=0.0.0.0",
+        "--server.port=8501"
+      ]
+    restart: unless-stopped
+
+volumes:
+  redpanda_data:
+  postgres_data:
